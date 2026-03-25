@@ -1,0 +1,11 @@
+package com.library.enums;
+
+public enum TipoNotificacion {
+    PRESTAMO_POR_VENCER,
+    PRESTAMO_VENCIDO,
+    RESERVA_DISPONIBLE,
+    MULTA_GENERADA,
+    BIENVENIDA,
+    PRESTAMO_CONFIRMADO,
+    DEVOLUCION_CONFIRMADA
+}

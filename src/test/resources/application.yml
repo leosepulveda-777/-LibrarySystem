@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+
+application:
+  jwt:
+    secret: dGVzdFNlY3JldEtleUZvclRlc3RpbmdPbmx5MTIzNDU2Nzg=
+    expiration: 900000
+    refresh-expiration: 604800000
+  library:
+    max-renewals: 2
+    loan-days-physical: 14
+    loan-days-digital: 7
+    fine-per-day: 500.0
+    max-active-loans: 3
+    max-active-reservations: 2
+    reservation-expiry-days: 3
