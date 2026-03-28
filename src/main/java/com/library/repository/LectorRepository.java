@@ -16,10 +16,10 @@ public interface LectorRepository extends JpaRepository<Lector, Long> {
     boolean existsByNumeroCarnet(String numeroCarnet);
 
     @Query("SELECT l FROM Lector l WHERE l.activo = true AND " +
-           "(:search IS NULL OR LOWER(l.usuario.nombre) LIKE LOWER(CONCAT('%',:search,'%')) " +
-           "OR LOWER(l.usuario.apellido) LIKE LOWER(CONCAT('%',:search,'%')) " +
-           "OR LOWER(l.usuario.email) LIKE LOWER(CONCAT('%',:search,'%')) " +
-           "OR LOWER(l.numeroCarnet) LIKE LOWER(CONCAT('%',:search,'%')))")
+            "(:search IS NULL OR LOWER(l.usuario.nombre) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(l.usuario.apellido) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(l.usuario.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(l.numeroCarnet) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     Page<Lector> findBySearchTerm(@Param("search") String search, Pageable pageable);
 
     @Query("SELECT COUNT(p) FROM Prestamo p WHERE p.lector.id = :lectorId AND p.estado = 'ACTIVO'")

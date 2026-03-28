@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AutorRepository extends JpaRepository<Autor, Long> {
     @Query("SELECT a FROM Autor a WHERE a.activo = true AND " +
-           "(:search IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%',:search,'%')) " +
-           "OR LOWER(a.apellido) LIKE LOWER(CONCAT('%',:search,'%')))")
+            "(:search IS NULL OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(a.apellido) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     Page<Autor> findBySearchTerm(@Param("search") String search, Pageable pageable);
 }

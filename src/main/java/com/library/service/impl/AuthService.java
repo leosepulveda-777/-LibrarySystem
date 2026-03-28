@@ -105,9 +105,10 @@ public class AuthService {
         return buildResponse(usuario, usuario.getLector(), newAccessToken, rt.getToken());
     }
 
+    // ✅ CORRECCIÓN: se agrega flush() para forzar el DELETE antes del INSERT
     private String createRefreshToken(Usuario usuario) {
-        // Delete existing token for this user if any
         refreshTokenRepository.deleteByUsuario(usuario);
+        refreshTokenRepository.flush();
         RefreshToken rt = RefreshToken.builder()
                 .usuario(usuario)
                 .token(UUID.randomUUID().toString())

@@ -16,11 +16,11 @@ public interface LibroRepository extends JpaRepository<Libro, Long> {
     Optional<Libro> findByIsbn(String isbn);
 
     @Query("SELECT DISTINCT l FROM Libro l LEFT JOIN l.autores a LEFT JOIN l.categorias c WHERE l.activo = true AND " +
-           "(:titulo IS NULL OR LOWER(l.titulo) LIKE LOWER(CONCAT('%',:titulo,'%'))) AND " +
-           "(:isbn IS NULL OR l.isbn = :isbn) AND " +
-           "(:autorId IS NULL OR a.id = :autorId) AND " +
-           "(:categoriaId IS NULL OR c.id = :categoriaId) AND " +
-           "(:editorial IS NULL OR LOWER(l.editorial) LIKE LOWER(CONCAT('%',:editorial,'%')))")
+            "(:titulo IS NULL OR LOWER(l.titulo) LIKE LOWER(CONCAT('%', CAST(:titulo AS string), '%'))) AND " +
+            "(:isbn IS NULL OR l.isbn = :isbn) AND " +
+            "(:autorId IS NULL OR a.id = :autorId) AND " +
+            "(:categoriaId IS NULL OR c.id = :categoriaId) AND " +
+            "(:editorial IS NULL OR LOWER(l.editorial) LIKE LOWER(CONCAT('%', CAST(:editorial AS string), '%')))")
     Page<Libro> busquedaAvanzada(
             @Param("titulo") String titulo,
             @Param("isbn") String isbn,
