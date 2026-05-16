@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,17 @@ import java.util.List;
 public class ReservaController {
 
     private final ReservaService reservaService;
+
+    // ✅ NUEVO: listar todas las reservas (admin/bibliotecario)
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Listar todas las reservas paginadas")
+    public ResponseEntity<ApiResponse<Page<ReservaResponse>>> listarTodas(
+            @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(reservaService.listarTodas(estado, page, size)));
+    }
 
     @PostMapping("/lector/{lectorId}")
     @Operation(summary = "Crear reserva para un libro")

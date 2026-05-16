@@ -31,6 +31,17 @@ public class ReservaService {
     private final LibraryProperties props;
     private final CatalogoService catalogoService;
 
+    // ✅ NUEVO: listar todas las reservas con filtro opcional por estado
+    @Transactional(readOnly = true)
+    public Page<ReservaResponse> listarTodas(String estado, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fechaReserva").descending());
+        if (estado != null && !estado.isBlank()) {
+            EstadoReserva estadoEnum = EstadoReserva.valueOf(estado.toUpperCase());
+            return reservaRepository.findByEstado(estadoEnum, pageable).map(this::toResponse);
+        }
+        return reservaRepository.findAll(pageable).map(this::toResponse);
+    }
+
     /**
      * Crea una reserva para un libro
      */

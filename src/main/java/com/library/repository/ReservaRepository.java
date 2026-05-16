@@ -15,11 +15,15 @@ import java.util.Optional;
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     Page<Reserva> findByLectorId(Long lectorId, Pageable pageable);
+
+    // NUEVO: buscar por estado para el panel de admin
+    Page<Reserva> findByEstado(EstadoReserva estado, Pageable pageable);
+
     long countByLectorIdAndEstadoIn(Long lectorId, List<EstadoReserva> estados);
     boolean existsByLectorIdAndLibroIdAndEstadoIn(Long lectorId, Long libroId, List<EstadoReserva> estados);
 
     @Query("SELECT r FROM Reserva r WHERE r.libro.id = :libroId AND r.estado = 'PENDIENTE' " +
-           "ORDER BY r.posicionCola ASC")
+            "ORDER BY r.posicionCola ASC")
     List<Reserva> findColaByLibroId(@Param("libroId") Long libroId);
 
     @Query("SELECT MAX(r.posicionCola) FROM Reserva r WHERE r.libro.id = :libroId AND r.estado = 'PENDIENTE'")
