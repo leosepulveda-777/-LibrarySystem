@@ -15,6 +15,7 @@ import java.util.List;
 @Repository
 public interface MultaRepository extends JpaRepository<Multa, Long> {
     Page<Multa> findByLectorId(Long lectorId, Pageable pageable);
+    Page<Multa> findByEstado(EstadoMulta estado, Pageable pageable);
     List<Multa> findByLectorIdAndEstadoIn(Long lectorId, List<EstadoMulta> estados);
     boolean existsByPrestamoId(Long prestamoId);
     long countByEstado(EstadoMulta estado);

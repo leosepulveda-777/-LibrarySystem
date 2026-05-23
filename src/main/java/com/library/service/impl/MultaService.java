@@ -37,10 +37,7 @@ public class MultaService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fechaGeneracion").descending());
         if (estado != null && !estado.isBlank()) {
             EstadoMulta estadoEnum = EstadoMulta.valueOf(estado.toUpperCase());
-            return multaRepository.findByFechaBetween(
-                    LocalDateTime.now().minusYears(10), LocalDateTime.now(), pageable)
-                    .map(this::toResponse)
-                    .map(r -> r); // pass-through; filter by estado done at query level if needed
+            return multaRepository.findByEstado(estadoEnum, pageable).map(this::toResponse);
         }
         return multaRepository.findAll(pageable).map(this::toResponse);
     }

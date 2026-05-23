@@ -23,9 +23,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * Servicio de gestión de préstamos físicos y digitales
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,9 +40,6 @@ public class PrestamoService {
     private final NotificationService notificationService;
     private final CatalogoService catalogoService;
 
-    /**
-     * Registra un préstamo físico
-     */
     public PrestamoResponse prestarFisico(PrestamoRequest req) {
         Lector lector = findLector(req.getLectorId());
         validarLectorActivo(lector);
@@ -67,7 +61,6 @@ public class PrestamoService {
         ejemplar.setEstado(EstadoEjemplar.PRESTADO);
         ejemplarRepository.save(ejemplar);
 
-        // Cancelar reserva del lector si existía
         reservaRepository.findColaByLibroId(libro.getId()).stream()
                 .filter(r -> r.getLector().getId().equals(lector.getId())
                         && (r.getEstado() == EstadoReserva.PENDIENTE || r.getEstado() == EstadoReserva.DISPONIBLE))
@@ -92,9 +85,6 @@ public class PrestamoService {
         return toResponse(prestamo);
     }
 
-    /**
-     * Registra un préstamo digital
-     */
     public PrestamoResponse prestarDigital(PrestamoRequest req) {
         Lector lector = findLector(req.getLectorId());
         validarLectorActivo(lector);
@@ -136,9 +126,6 @@ public class PrestamoService {
         return toResponse(prestamo);
     }
 
-    /**
-     * Devuelve un préstamo y genera multa si corresponde
-     */
     public PrestamoResponse devolver(Long prestamoId) {
         Prestamo prestamo = findPrestamo(prestamoId);
         if (prestamo.getEstado() != EstadoPrestamo.ACTIVO && prestamo.getEstado() != EstadoPrestamo.VENCIDO) {
@@ -149,12 +136,10 @@ public class PrestamoService {
         prestamo.setFechaDevolucionReal(ahora);
         prestamo.setEstado(EstadoPrestamo.DEVUELTO);
 
-        // Liberar recurso
         if (!prestamo.isEsDigital() && prestamo.getEjemplar() != null) {
             Ejemplar ejemplar = prestamo.getEjemplar();
             ejemplar.setEstado(EstadoEjemplar.DISPONIBLE);
             ejemplarRepository.save(ejemplar);
-            // Notificar próximo en cola
             notificarProximoEnCola(prestamo.getLibro().getId());
         } else if (prestamo.isEsDigital() && prestamo.getLibroDigital() != null) {
             LibroDigital ld = prestamo.getLibroDigital();
@@ -162,7 +147,6 @@ public class PrestamoService {
             libroDigitalRepository.save(ld);
         }
 
-        // Generar multa si hay retraso
         if (ahora.isAfter(prestamo.getFechaDevolucionEsperada())) {
             long dias = ChronoUnit.DAYS.between(prestamo.getFechaDevolucionEsperada(), ahora);
             BigDecimal monto = BigDecimal.valueOf(dias * props.getFinePerDay());
@@ -174,7 +158,6 @@ public class PrestamoService {
                     .diasRetraso((int) dias)
                     .build();
             multaRepository.save(multa);
-            prestamo.setEstado(EstadoPrestamo.DEVUELTO);
 
             notificationService.multaGenerada(prestamo.getLector().getUsuario().getId(),
                     prestamo.getLector().getUsuario().getEmail(),
@@ -185,9 +168,6 @@ public class PrestamoService {
         return toResponse(prestamoRepository.save(prestamo));
     }
 
-    /**
-     * Renueva un préstamo activo
-     */
     public PrestamoResponse renovar(Long prestamoId) {
         Prestamo prestamo = findPrestamo(prestamoId);
         if (prestamo.getEstado() != EstadoPrestamo.ACTIVO) {
@@ -197,14 +177,12 @@ public class PrestamoService {
             throw new BusinessException("Se alcanzó el límite de renovaciones (" + props.getMaxRenewals() + ")");
         }
 
-        // Verificar que no haya reservas pendientes del libro
         long reservasCola = reservaRepository.findColaByLibroId(prestamo.getLibro().getId()).size();
         if (reservasCola > 0 && !prestamo.isEsDigital()) {
             throw new BusinessException("No se puede renovar: hay reservas pendientes para este libro");
         }
 
-        int diasExtra = prestamo.isEsDigital() ? props.getLoanDaysDigital() : props.getLoanDaysPhysical();
-        prestamo.setFechaDevolucionEsperada(prestamo.getFechaDevolucionEsperada().plusDays(diasExtra));
+        prestamo.setFechaDevolucionEsperada(prestamo.getFechaDevolucionEsperada().plusDays(7));
         prestamo.setNumeroRenovaciones(prestamo.getNumeroRenovaciones() + 1);
         prestamo.setEstado(EstadoPrestamo.RENOVADO);
 
@@ -232,12 +210,10 @@ public class PrestamoService {
         return toResponse(findPrestamo(id));
     }
 
-    // ============ PRIVADOS ============
-
     private void validarLectorActivo(Lector lector) {
         if (!lector.isActivo()) throw new BusinessException("El lector está inactivo");
 
-        List<com.library.entity.Multa> multasPendientes = multaRepository
+        List<Multa> multasPendientes = multaRepository
                 .findByLectorIdAndEstadoIn(lector.getId(),
                         List.of(EstadoMulta.PENDIENTE, EstadoMulta.PARCIALMENTE_PAGADA));
         if (!multasPendientes.isEmpty()) {
@@ -288,7 +264,7 @@ public class PrestamoService {
     public PrestamoResponse toResponse(Prestamo p) {
         LocalDateTime ahora = LocalDateTime.now();
         boolean vencido = p.getEstado() == EstadoPrestamo.ACTIVO &&
-                          ahora.isAfter(p.getFechaDevolucionEsperada());
+                ahora.isAfter(p.getFechaDevolucionEsperada());
         long diasRetraso = vencido ?
                 ChronoUnit.DAYS.between(p.getFechaDevolucionEsperada(), ahora) : 0;
 

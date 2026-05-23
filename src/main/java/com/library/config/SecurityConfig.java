@@ -20,9 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Configuración principal de Spring Security
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -43,35 +40,28 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PUBLIC_URLS).permitAll()
-                // Notificaciones y recomendaciones (microservicios simulados)
-                .requestMatchers("/api/v1/notifications/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                .requestMatchers("/api/v1/recommendations/**").authenticated()
-                // Catálogo - lectura pública, escritura restringida
-                .requestMatchers(HttpMethod.GET, "/api/v1/catalogo/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                .requestMatchers(HttpMethod.PUT, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                .requestMatchers(HttpMethod.DELETE, "/api/v1/catalogo/**").hasRole("ADMIN")
-                // Préstamos
-                .requestMatchers("/api/v1/prestamos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
-                // Reservas
-                .requestMatchers("/api/v1/reservas/**").authenticated()
-                // Multas
-                .requestMatchers(HttpMethod.DELETE, "/api/v1/multas/*/condonar").hasRole("ADMIN")
-                .requestMatchers("/api/v1/multas/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
-                // Lectores
-                .requestMatchers("/api/v1/lectores/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
-                // Reportes
-                .requestMatchers("/api/v1/reportes/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_URLS).permitAll()
+                        .requestMatchers("/api/v1/notifications/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers("/api/v1/recommendations/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/catalogo/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/catalogo/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/prestamos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
+                        .requestMatchers("/api/v1/reservas/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/multas/*/condonar").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/multas/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
+                        .requestMatchers("/api/v1/lectores/**").hasAnyRole("ADMIN", "BIBLIOTECARIO", "LECTOR")
+                        .requestMatchers("/api/v1/reportes/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

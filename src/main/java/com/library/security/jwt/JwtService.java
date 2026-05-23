@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-/**
- * Servicio para generación y validación de tokens JWT
- */
 @Service
 @Slf4j
 public class JwtService {
@@ -33,9 +30,9 @@ public class JwtService {
         claims.put("email", usuario.getEmail());
         claims.put("rol", usuario.getRol().name());
 
-        // Agrega numeroCarnet si es LECTOR
         if (usuario.getLector() != null) {
             claims.put("numeroCarnet", usuario.getLector().getNumeroCarnet());
+            claims.put("lectorId", usuario.getLector().getId());
         }
 
         return buildToken(claims, usuario.getEmail(), jwtExpiration);
