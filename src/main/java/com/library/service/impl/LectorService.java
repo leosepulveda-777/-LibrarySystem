@@ -58,6 +58,7 @@ public class LectorService {
 
         if (req.getNombre() != null) usuario.setNombre(req.getNombre());
         if (req.getApellido() != null) usuario.setApellido(req.getApellido());
+        if (req.getEmail() != null && !req.getEmail().isBlank()) usuario.setEmail(req.getEmail());
         if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono());
         if (req.getDireccion() != null) lector.setDireccion(req.getDireccion());
         if (req.getFechaNacimiento() != null) lector.setFechaNacimiento(LocalDate.parse(req.getFechaNacimiento()));
@@ -97,11 +98,13 @@ public class LectorService {
                 .apellido(l.getUsuario().getApellido())
                 .email(l.getUsuario().getEmail())
                 .telefono(l.getUsuario().getTelefono())
+                .documento(l.getUsuario().getEmail()) // no hay documento en entidad; usar email como fallback hasta que se agregue
                 .numeroCarnet(l.getNumeroCarnet())
                 .fechaNacimiento(l.getFechaNacimiento())
                 .direccion(l.getDireccion())
                 .fechaRegistro(l.getFechaRegistro())
                 .activo(l.isActivo())
+                .estado(l.isActivo() ? "ACTIVO" : "SUSPENDIDO")
                 .maxPrestamos(l.getMaxPrestamos())
                 .prestamosActivos((int) prestamosActivos)
                 .multasPendientes((int) multasPendientes)

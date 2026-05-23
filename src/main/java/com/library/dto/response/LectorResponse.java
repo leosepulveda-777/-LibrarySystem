@@ -15,11 +15,14 @@ public class LectorResponse {
     private String apellido;
     private String email;
     private String telefono;
+    private String documento;
     private String numeroCarnet;
     private LocalDate fechaNacimiento;
     private String direccion;
     private LocalDateTime fechaRegistro;
     private boolean activo;
+    /** "ACTIVO" o "SUSPENDIDO" — calculado a partir del campo activo */
+    private String estado;
     private int maxPrestamos;
     private int prestamosActivos;
     private int multasPendientes;

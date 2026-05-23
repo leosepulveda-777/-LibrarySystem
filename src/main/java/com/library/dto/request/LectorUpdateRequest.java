@@ -22,4 +22,8 @@ public class LectorUpdateRequest {
     private String fechaNacimiento;
 
     private Boolean activo;
+
+    /** Correo electronico actualizable por el propio lector */
+    @Size(max = 255)
+    private String email;
 }

@@ -82,6 +82,24 @@ public class ReservaService {
     }
 
     /**
+     * Confirma que el lector retiró el libro (solo admin/bibliotecario).
+     * Cambia el estado de DISPONIBLE → COMPLETADA.
+     */
+    public ReservaResponse confirmarEntrega(Long reservaId) {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva", reservaId));
+
+        if (reserva.getEstado() != EstadoReserva.DISPONIBLE) {
+            throw new BusinessException("Solo se pueden confirmar reservas en estado DISPONIBLE");
+        }
+
+        reserva.setEstado(EstadoReserva.COMPLETADA);
+        reserva = reservaRepository.save(reserva);
+        log.info("Reserva {} confirmada como entregada", reservaId);
+        return toResponse(reserva);
+    }
+
+    /**
      * Cancela una reserva
      */
     public ReservaResponse cancelar(Long reservaId, Long lectorId) {

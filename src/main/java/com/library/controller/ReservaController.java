@@ -55,6 +55,15 @@ public class ReservaController {
                 reservaService.cancelar(reservaId, lectorId)));
     }
 
+    @PatchMapping("/{reservaId}/confirmar")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Confirmar entrega de libro al lector (admin/bibliotecario)")
+    public ResponseEntity<ApiResponse<ReservaResponse>> confirmar(
+            @PathVariable Long reservaId) {
+        return ResponseEntity.ok(ApiResponse.ok("Entrega confirmada",
+                reservaService.confirmarEntrega(reservaId)));
+    }
+
     @GetMapping("/lector/{lectorId}")
     @Operation(summary = "Listar reservas de un lector")
     public ResponseEntity<ApiResponse<Page<ReservaResponse>>> porLector(
