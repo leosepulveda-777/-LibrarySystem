@@ -34,7 +34,14 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/api-docs/**",
-            "/actuator/health"
+            "/actuator/health",
+            // US-009 y US-010: búsqueda y detalle de libros no requieren autenticación
+            "/api/v1/catalogo/libros",
+            "/api/v1/catalogo/libros/**",
+            "/api/v1/catalogo/categorias",
+            "/api/v1/catalogo/categorias/**",
+            "/api/v1/catalogo/autores",
+            "/api/v1/catalogo/autores/**"
     };
 
     @Bean
@@ -45,7 +52,6 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/api/v1/notifications/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
                         .requestMatchers("/api/v1/recommendations/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/catalogo/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/catalogo/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/catalogo/**").hasRole("ADMIN")

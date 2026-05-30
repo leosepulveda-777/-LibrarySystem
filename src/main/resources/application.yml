@@ -41,12 +41,17 @@ application:
 
   library:
     max-renewals: 2
-    loan-days-physical: 14
-    loan-days-digital: 7
-    fine-per-day: 500.0  # Multa en pesos por día
-    max-active-loans: 3
-    max-active-reservations: 2
+    loan-days-physical: 15        # US-011: 15 días
+    loan-days-digital: 21         # US-012: 21 días
+    fine-per-day: 1000.0          # US-019: $1000/día
+    max-active-loans: 5           # US-011: máximo 5 físicos
+    max-active-loans-physical: 5
+    max-active-loans-digital: 3   # US-012: máximo 3 digitales
+    max-active-reservations: 3    # US-016: máximo 3
     reservation-expiry-days: 3
+
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
 
 logging:
   level:

@@ -6,9 +6,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * DTO para registro de nuevo lector
- */
 @Data
 public class RegisterRequest {
 
@@ -19,6 +16,9 @@ public class RegisterRequest {
     @NotBlank(message = "El apellido es obligatorio")
     @Size(min = 2, max = 100, message = "El apellido debe tener entre 2 y 100 caracteres")
     private String apellido;
+
+    @NotBlank(message = "El documento es obligatorio")
+    private String documento;
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email no tiene un formato válido")
@@ -34,5 +34,5 @@ public class RegisterRequest {
 
     private String direccion;
 
-    private String fechaNacimiento; // yyyy-MM-dd
+    private String fechaNacimiento;
 }

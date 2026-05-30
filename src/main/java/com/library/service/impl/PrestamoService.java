@@ -43,7 +43,7 @@ public class PrestamoService {
     public PrestamoResponse prestarFisico(PrestamoRequest req) {
         Lector lector = findLector(req.getLectorId());
         validarLectorActivo(lector);
-        validarLimitesPrestamo(lector);
+        validarLimitesFisico(lector);
 
         Ejemplar ejemplar;
         if (req.getEjemplarId() != null) {
@@ -88,7 +88,7 @@ public class PrestamoService {
     public PrestamoResponse prestarDigital(PrestamoRequest req) {
         Lector lector = findLector(req.getLectorId());
         validarLectorActivo(lector);
-        validarLimitesPrestamo(lector);
+        validarLimitesDigital(lector);
 
         if (prestamoRepository.existsByLectorIdAndLibroIdAndEstado(
                 lector.getId(), req.getLibroId(), EstadoPrestamo.ACTIVO)) {
@@ -235,10 +235,29 @@ public class PrestamoService {
         }
     }
 
-    private void validarLimitesPrestamo(Lector lector) {
-        long activos = prestamoRepository.countByLectorIdAndEstado(lector.getId(), EstadoPrestamo.ACTIVO);
-        if (activos >= lector.getMaxPrestamos()) {
-            throw new BusinessException("El lector ha alcanzado el límite de préstamos activos (" + lector.getMaxPrestamos() + ")");
+    // US-011: máximo 5 préstamos físicos simultáneos
+    private void validarLimitesFisico(Lector lector) {
+        long fisicosActivos = prestamoRepository.findByLectorId(
+                        lector.getId(), PageRequest.of(0, 100)).stream()
+                .filter(p -> !p.isEsDigital()
+                        && (p.getEstado() == EstadoPrestamo.ACTIVO || p.getEstado() == EstadoPrestamo.RENOVADO))
+                .count();
+        if (fisicosActivos >= props.getMaxActiveLoansPhysical()) {
+            throw new BusinessException("El lector alcanzó el límite de préstamos físicos activos ("
+                    + props.getMaxActiveLoansPhysical() + ")");
+        }
+    }
+
+    // US-012: máximo 3 préstamos digitales simultáneos
+    private void validarLimitesDigital(Lector lector) {
+        long digitalesActivos = prestamoRepository.findByLectorId(
+                        lector.getId(), PageRequest.of(0, 100)).stream()
+                .filter(p -> p.isEsDigital()
+                        && (p.getEstado() == EstadoPrestamo.ACTIVO || p.getEstado() == EstadoPrestamo.RENOVADO))
+                .count();
+        if (digitalesActivos >= props.getMaxActiveLoansDigital()) {
+            throw new BusinessException("El lector alcanzó el límite de préstamos digitales activos ("
+                    + props.getMaxActiveLoansDigital() + ")");
         }
     }
 

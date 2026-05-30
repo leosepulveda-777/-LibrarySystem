@@ -4,6 +4,7 @@ import com.library.config.LibraryProperties;
 import com.library.dto.request.ReservaRequest;
 import com.library.dto.response.ReservaResponse;
 import com.library.entity.*;
+import com.library.enums.EstadoPrestamo;
 import com.library.enums.EstadoReserva;
 import com.library.exception.BusinessException;
 import com.library.exception.ResourceNotFoundException;
@@ -17,9 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Servicio de gestión de reservas con cola de espera
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,10 +26,10 @@ public class ReservaService {
 
     private final ReservaRepository reservaRepository;
     private final LectorRepository lectorRepository;
+    private final PrestamoRepository prestamoRepository;
     private final LibraryProperties props;
     private final CatalogoService catalogoService;
 
-    // ✅ NUEVO: listar todas las reservas con filtro opcional por estado
     @Transactional(readOnly = true)
     public Page<ReservaResponse> listarTodas(String estado, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fechaReserva").descending());
@@ -42,9 +40,6 @@ public class ReservaService {
         return reservaRepository.findAll(pageable).map(this::toResponse);
     }
 
-    /**
-     * Crea una reserva para un libro
-     */
     public ReservaResponse reservar(Long lectorId, ReservaRequest req) {
         Lector lector = lectorRepository.findById(lectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lector", lectorId));
@@ -53,20 +48,23 @@ public class ReservaService {
 
         Libro libro = catalogoService.findLibro(req.getLibroId());
 
-        // Verificar si ya tiene reserva activa para este libro
+        // US-016: no puede reservar si ya tiene el libro en préstamo activo
+        if (prestamoRepository.existsByLectorIdAndLibroIdAndEstado(
+                lectorId, req.getLibroId(), EstadoPrestamo.ACTIVO)) {
+            throw new BusinessException("No puedes reservar un libro que ya tienes en préstamo activo");
+        }
+
         if (reservaRepository.existsByLectorIdAndLibroIdAndEstadoIn(
                 lectorId, req.getLibroId(), List.of(EstadoReserva.PENDIENTE, EstadoReserva.DISPONIBLE))) {
             throw new BusinessException("Ya tienes una reserva activa para este libro");
         }
 
-        // Verificar límite de reservas activas
         long reservasActivas = reservaRepository.countByLectorIdAndEstadoIn(
                 lectorId, List.of(EstadoReserva.PENDIENTE, EstadoReserva.DISPONIBLE));
         if (reservasActivas >= props.getMaxActiveReservations()) {
             throw new BusinessException("Has alcanzado el límite de reservas activas (" + props.getMaxActiveReservations() + ")");
         }
 
-        // Calcular posición en cola
         int posicion = reservaRepository.findMaxPosicionCola(req.getLibroId()).orElse(0) + 1;
 
         Reserva reserva = Reserva.builder()
@@ -81,10 +79,6 @@ public class ReservaService {
         return toResponse(reserva);
     }
 
-    /**
-     * Confirma que el lector retiró el libro (solo admin/bibliotecario).
-     * Cambia el estado de DISPONIBLE → COMPLETADA.
-     */
     public ReservaResponse confirmarEntrega(Long reservaId) {
         Reserva reserva = reservaRepository.findById(reservaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva", reservaId));
@@ -99,9 +93,6 @@ public class ReservaService {
         return toResponse(reserva);
     }
 
-    /**
-     * Cancela una reserva
-     */
     public ReservaResponse cancelar(Long reservaId, Long lectorId) {
         Reserva reserva = reservaRepository.findById(reservaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva", reservaId));
@@ -115,8 +106,6 @@ public class ReservaService {
 
         reserva.setEstado(EstadoReserva.CANCELADA);
         reserva = reservaRepository.save(reserva);
-
-        // Reordenar la cola
         reordenarCola(reserva.getLibro().getId());
 
         log.info("Reserva {} cancelada", reservaId);

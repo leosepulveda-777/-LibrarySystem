@@ -1,5 +1,6 @@
 package com.library.scheduler;
 
+import com.library.config.LibraryProperties;
 import com.library.entity.*;
 import com.library.enums.EstadoMulta;
 import com.library.enums.EstadoPrestamo;
@@ -17,12 +18,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * Tareas programadas del sistema de biblioteca:
- * - Marcar préstamos vencidos y generar multas
- * - Notificar préstamos próximos a vencer
- * - Expirar reservas vencidas
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -32,12 +27,8 @@ public class LibraryScheduler {
     private final MultaRepository multaRepository;
     private final ReservaRepository reservaRepository;
     private final NotificationService notificationService;
+    private final LibraryProperties props; // FIX: tarifa desde config, no hardcodeada
 
-    private static final double MULTA_POR_DIA = 500.0;
-
-    /**
-     * Cada hora: detecta préstamos vencidos y genera multas automáticamente
-     */
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void procesarPrestamosVencidos() {
@@ -46,14 +37,13 @@ public class LibraryScheduler {
 
         int procesados = 0;
         for (Prestamo prestamo : vencidos) {
-            // Marcar como VENCIDO
             prestamo.setEstado(EstadoPrestamo.VENCIDO);
             prestamoRepository.save(prestamo);
 
-            // Generar multa si no existe ya
             if (!multaRepository.existsByPrestamoId(prestamo.getId())) {
                 long dias = ChronoUnit.DAYS.between(prestamo.getFechaDevolucionEsperada(), LocalDateTime.now());
-                BigDecimal monto = BigDecimal.valueOf(dias * MULTA_POR_DIA);
+                if (dias < 1) dias = 1; // FIX: mínimo 1 día de multa
+                BigDecimal monto = BigDecimal.valueOf(dias * props.getFinePerDay()); // FIX: usa config
 
                 Multa multa = Multa.builder()
                         .lector(prestamo.getLector())
@@ -84,9 +74,6 @@ public class LibraryScheduler {
         }
     }
 
-    /**
-     * Cada día a las 9am: notifica préstamos que vencen en los próximos 2 días
-     */
     @Scheduled(cron = "0 0 9 * * *")
     @Transactional(readOnly = true)
     public void notificarPrestamosProximosAVencer() {
@@ -107,9 +94,6 @@ public class LibraryScheduler {
         log.info("[SCHEDULER] {} notificaciones de vencimiento enviadas", porVencer.size());
     }
 
-    /**
-     * Cada hora: expira reservas que pasaron su fecha límite
-     */
     @Scheduled(cron = "0 30 * * * *")
     @Transactional
     public void expirarReservas() {

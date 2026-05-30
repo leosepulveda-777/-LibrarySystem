@@ -36,4 +36,10 @@ public interface LibroRepository extends JpaRepository<Libro, Long> {
 
     @Query("SELECT l FROM Libro l JOIN l.categorias c WHERE c.id IN :categoriaIds AND l.activo = true")
     List<Libro> findByCategoriaIds(@Param("categoriaIds") List<Long> categoriaIds, Pageable pageable);
+
+    // US-029: filtra libros ya leídos en la query, no en Java
+    @Query("SELECT l FROM Libro l JOIN l.categorias c WHERE c.id IN :categoriaIds AND l.activo = true AND l.id NOT IN :librosLeidos")
+    List<Libro> findByCategoriaIdsExcludingLibros(@Param("categoriaIds") List<Long> categoriaIds,
+                                                  @Param("librosLeidos") List<Long> librosLeidos,
+                                                  Pageable pageable);
 }

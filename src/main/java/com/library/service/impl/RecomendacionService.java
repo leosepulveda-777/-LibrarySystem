@@ -1,7 +1,6 @@
 package com.library.service.impl;
 
 import com.library.dto.response.LibroResponse;
-import com.library.entity.Libro;
 import com.library.exception.ResourceNotFoundException;
 import com.library.repository.LectorRepository;
 import com.library.repository.LibroRepository;
@@ -16,10 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Microservicio simulado de recomendaciones.
- * Algoritmo: recomienda libros de las mismas categorías que el lector ha prestado.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,21 +30,19 @@ public class RecomendacionService {
         lectorRepository.findById(lectorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lector", lectorId));
 
-        // Obtener IDs de libros ya prestados por el lector
         List<Long> librosLeidos = prestamoRepository
                 .findByLectorId(lectorId, PageRequest.of(0, 50, Sort.by("fechaPrestamo").descending()))
                 .map(p -> p.getLibro().getId())
                 .getContent();
 
         if (librosLeidos.isEmpty()) {
-            // Sin historial: retornar los libros más recientes
-            return libroRepository.findAll(PageRequest.of(0, 10, Sort.by("createdAt").descending()))
+            // Sin historial: retornar los 10 más recientes
+            return libroRepository.findAll(PageRequest.of(0, 10, Sort.by("id").descending()))
                     .stream()
                     .map(catalogoService::toLibroResponse)
                     .collect(Collectors.toList());
         }
 
-        // Obtener categorías de los libros leídos
         List<Long> categoriaIds = libroRepository.findAllById(librosLeidos).stream()
                 .flatMap(l -> l.getCategorias().stream())
                 .map(c -> c.getId())
@@ -60,13 +53,13 @@ public class RecomendacionService {
             return List.of();
         }
 
-        // Buscar libros de esas categorías que NO ha leído, máximo 10
+        // FIX: filtra leídos en la query SQL, no en el stream Java
+        List<Long> idsParaExcluir = librosLeidos.isEmpty() ? List.of(-1L) : librosLeidos;
+
         List<LibroResponse> recomendaciones = libroRepository
-                .findByCategoriaIds(categoriaIds, PageRequest.of(0, 30))
+                .findByCategoriaIdsExcludingLibros(categoriaIds, idsParaExcluir, PageRequest.of(0, 10))
                 .stream()
-                .filter(l -> !librosLeidos.contains(l.getId()))
                 .distinct()
-                .limit(10)
                 .map(catalogoService::toLibroResponse)
                 .collect(Collectors.toList());
 
