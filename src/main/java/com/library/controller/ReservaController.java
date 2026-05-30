@@ -2,6 +2,7 @@ package com.library.controller;
 
 import com.library.dto.request.ReservaRequest;
 import com.library.dto.response.ApiResponse;
+import com.library.dto.response.PrestamoResponse;
 import com.library.dto.response.ReservaResponse;
 import com.library.service.impl.ReservaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +27,6 @@ public class ReservaController {
 
     private final ReservaService reservaService;
 
-    // ✅ NUEVO: listar todas las reservas (admin/bibliotecario)
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @Operation(summary = "Listar todas las reservas paginadas")
@@ -57,11 +57,23 @@ public class ReservaController {
 
     @PatchMapping("/{reservaId}/confirmar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @Operation(summary = "Confirmar entrega de libro al lector (admin/bibliotecario)")
+    @Operation(summary = "Confirmar entrega manual — cierra la reserva sin crear préstamo")
     public ResponseEntity<ApiResponse<ReservaResponse>> confirmar(
             @PathVariable Long reservaId) {
         return ResponseEntity.ok(ApiResponse.ok("Entrega confirmada",
                 reservaService.confirmarEntrega(reservaId)));
+    }
+
+    @PostMapping("/{reservaId}/convertir-prestamo")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(
+            summary = "Convertir reserva a préstamo físico en un clic",
+            description = "Busca un ejemplar disponible automáticamente, crea el préstamo y marca la reserva COMPLETADA."
+    )
+    public ResponseEntity<ApiResponse<PrestamoResponse>> convertirAPrestamo(
+            @PathVariable Long reservaId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(reservaService.convertirAPrestamo(reservaId)));
     }
 
     @GetMapping("/lector/{lectorId}")
